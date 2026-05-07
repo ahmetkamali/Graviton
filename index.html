@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Graviton</title>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <div id="mainMenuPanel" class="panel">
+    <h1 class="menu-title">GRAVITON</h1>
+    <button id="playBtn" class="menu-button">Play</button>
+  </div>
+
+  <div id="levelSelectPanel" class="panel is-hidden">
+    <h2 class="menu-title">Select Level</h2>
+    <div id="levelGrid" class="level-grid"></div>
+    <button id="backFromLevelsBtn" class="menu-button">Back</button>
+  </div>
+
+  <div id="resultPanel" class="panel is-hidden">
+    <p id="resultMessage" class="result-message"></p>
+    <div class="result-buttons">
+      <button id="retryBtn" class="result-button">Retry</button>
+      <button id="menuBtn" class="result-button">Menu</button>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
