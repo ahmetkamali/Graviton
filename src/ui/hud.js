@@ -1,12 +1,14 @@
-export const LAUNCH_BTN = { x: 1090, y: 16, w: 96, h: 36 };
+export function getLaunchBtn(canvasWidth) {
+  return { x: canvasWidth - 110, y: 16, w: 96, h: 36 };
+}
 
-export function drawPlacementHUD(ctx) {
+export function drawPlacementHUD(ctx, canvasWidth) {
   ctx.font = '13px monospace';
   ctx.textAlign = 'left';
   ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-  ctx.fillText('Drag ship to aim  ·  Drag stars from bar below', 14, 24);
+  ctx.fillText('Drag ship to aim  ·  Drag items from bar below', 14, 24);
 
-  const { x, y, w, h } = LAUNCH_BTN;
+  const { x, y, w, h } = getLaunchBtn(canvasWidth);
   ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
   ctx.fillRect(x, y, w, h);
   ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';

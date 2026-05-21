@@ -71,23 +71,32 @@ const SLOT_SIZE = 44;
 const SLOT_GAP = 10;
 const SLOT_PAD_X = 14;
 const SLOT_PAD_Y = 8;
+const DIVIDER_GAP = 20;
 
-export function getHotbar(canvasWidth, canvasHeight, totalSlots) {
-  const innerWidth = totalSlots * SLOT_SIZE + (totalSlots - 1) * SLOT_GAP;
+export function getHotbar(canvasWidth, canvasHeight, starSlots, planetSlots = 0) {
+  const starGroupWidth = starSlots > 0 ? starSlots * SLOT_SIZE + (starSlots - 1) * SLOT_GAP : 0;
+  const planetGroupWidth = planetSlots > 0 ? planetSlots * SLOT_SIZE + (planetSlots - 1) * SLOT_GAP : 0;
+  const hasPlanets = planetSlots > 0;
+  const innerWidth = starGroupWidth + (hasPlanets ? DIVIDER_GAP : 0) + planetGroupWidth;
   const width = innerWidth + SLOT_PAD_X * 2;
   const height = SLOT_SIZE + SLOT_PAD_Y * 2;
+  const x = (canvasWidth - width) / 2;
+  const y = canvasHeight - height - 10;
+  const starGroupX = x + SLOT_PAD_X;
+  const planetGroupX = hasPlanets ? x + SLOT_PAD_X + starGroupWidth + DIVIDER_GAP : null;
+  const dividerX = hasPlanets ? x + SLOT_PAD_X + starGroupWidth + DIVIDER_GAP / 2 : null;
+
   return {
-    x: (canvasWidth - width) / 2,
-    y: canvasHeight - height - 10,
-    width,
-    height,
-    totalSlots,
+    x, y, width, height,
+    starSlots, planetSlots, hasPlanets,
+    starGroupX, planetGroupX, dividerX,
   };
 }
 
-export function getHotbarSlot(hotbar, index) {
+export function getHotbarSlot(hotbar, group, index) {
+  const startX = group === 'planet' ? hotbar.planetGroupX : hotbar.starGroupX;
   return {
-    x: hotbar.x + SLOT_PAD_X + index * (SLOT_SIZE + SLOT_GAP),
+    x: startX + index * (SLOT_SIZE + SLOT_GAP),
     y: hotbar.y + SLOT_PAD_Y,
     size: SLOT_SIZE,
   };
@@ -98,15 +107,21 @@ export function isOverHotbar(mx, my, hotbar) {
          my >= hotbar.y && my <= hotbar.y + hotbar.height;
 }
 
-export function getHoveredFilledSlot(mx, my, hotbar, starsLeft) {
+export function getHoveredFilledSlot(mx, my, hotbar, starsLeft, planetsLeft = 0) {
   for (let i = 0; i < starsLeft; i++) {
-    const s = getHotbarSlot(hotbar, i);
-    if (mx >= s.x && mx <= s.x + s.size && my >= s.y && my <= s.y + s.size) return i;
+    const s = getHotbarSlot(hotbar, 'star', i);
+    if (mx >= s.x && mx <= s.x + s.size && my >= s.y && my <= s.y + s.size) return { group: 'star', index: i };
   }
-  return -1;
+  if (hotbar.hasPlanets) {
+    for (let i = 0; i < planetsLeft; i++) {
+      const s = getHotbarSlot(hotbar, 'planet', i);
+      if (mx >= s.x && mx <= s.x + s.size && my >= s.y && my <= s.y + s.size) return { group: 'planet', index: i };
+    }
+  }
+  return null;
 }
 
-export function drawHotbar(ctx, hotbar, starsLeft, hoverSlot = -1, isDragHover = false) {
+export function drawHotbar(ctx, hotbar, starsLeft, planetsLeft = 0, hoverSlot = null, isDragHover = false) {
   ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
   ctx.fillRect(hotbar.x, hotbar.y, hotbar.width, hotbar.height);
 
@@ -114,12 +129,12 @@ export function drawHotbar(ctx, hotbar, starsLeft, hoverSlot = -1, isDragHover =
   ctx.lineWidth = isDragHover ? 2 : 1;
   ctx.strokeRect(hotbar.x, hotbar.y, hotbar.width, hotbar.height);
 
-  for (let i = 0; i < hotbar.totalSlots; i++) {
-    const slot = getHotbarSlot(hotbar, i);
+  for (let i = 0; i < hotbar.starSlots; i++) {
+    const slot = getHotbarSlot(hotbar, 'star', i);
     const cx = slot.x + slot.size / 2;
     const cy = slot.y + slot.size / 2;
     const filled = i < starsLeft;
-    const hovered = filled && i === hoverSlot;
+    const hovered = filled && hoverSlot !== null && hoverSlot.group === 'star' && hoverSlot.index === i;
 
     ctx.beginPath();
     ctx.arc(cx, cy, slot.size / 2 - 4, 0, Math.PI * 2);
@@ -136,14 +151,48 @@ export function drawHotbar(ctx, hotbar, starsLeft, hoverSlot = -1, isDragHover =
       ctx.fill();
     }
   }
+
+  if (hotbar.hasPlanets) {
+    ctx.beginPath();
+    ctx.moveTo(hotbar.dividerX, hotbar.y + 8);
+    ctx.lineTo(hotbar.dividerX, hotbar.y + hotbar.height - 8);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    for (let i = 0; i < hotbar.planetSlots; i++) {
+      const slot = getHotbarSlot(hotbar, 'planet', i);
+      const cx = slot.x + slot.size / 2;
+      const cy = slot.y + slot.size / 2;
+      const filled = i < planetsLeft;
+      const hovered = filled && hoverSlot !== null && hoverSlot.group === 'planet' && hoverSlot.index === i;
+
+      ctx.beginPath();
+      ctx.arc(cx, cy, slot.size / 2 - 4, 0, Math.PI * 2);
+      ctx.strokeStyle = filled
+        ? hovered ? 'rgba(100, 180, 255, 0.85)' : 'rgba(80, 160, 255, 0.4)'
+        : 'rgba(255, 255, 255, 0.1)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      if (filled) {
+        ctx.beginPath();
+        ctx.arc(cx, cy, 11, 0, Math.PI * 2);
+        ctx.fillStyle = hovered ? '#88bbff' : '#5599ff';
+        ctx.fill();
+      }
+    }
+  }
 }
 
-export function drawDragStar(ctx, x, y, radius) {
+export function drawDragItem(ctx, x, y, radius, kind) {
+  const fillColor = kind === 'planet' ? 'rgba(85, 153, 255, 0.5)' : 'rgba(255, 200, 0, 0.5)';
+  const strokeColor = kind === 'planet' ? 'rgba(100, 180, 255, 0.9)' : 'rgba(255, 210, 0, 0.9)';
   ctx.beginPath();
   ctx.arc(x, y, radius, 0, Math.PI * 2);
-  ctx.fillStyle = 'rgba(255, 200, 0, 0.5)';
+  ctx.fillStyle = fillColor;
   ctx.fill();
-  ctx.strokeStyle = 'rgba(255, 210, 0, 0.9)';
+  ctx.strokeStyle = strokeColor;
   ctx.lineWidth = 2;
   ctx.stroke();
 }
