@@ -318,6 +318,54 @@ html, body {
   letter-spacing: .25em;
 }
 
+/* ─── Prediction assist toggle ───────────────────────── */
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(0, 229, 255, 0.55);
+  cursor: pointer;
+  user-select: none;
+  transition: color .2s;
+}
+
+.toggle-label:hover {
+  color: rgba(0, 229, 255, 0.85);
+}
+
+.toggle-label input[type="checkbox"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 1px solid rgba(0, 229, 255, 0.35);
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  transition: border-color .2s, box-shadow .2s;
+}
+
+.toggle-label input[type="checkbox"]:checked {
+  border-color: var(--cyan);
+  box-shadow: 0 0 6px rgba(0, 229, 255, 0.5);
+}
+
+.toggle-label input[type="checkbox"]:checked::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -52%);
+  color: var(--cyan);
+  font-size: 11px;
+  line-height: 1;
+}
+
 /* ─── Placement scroll bar ───────────────────────────── */
 .placement-scroll {
   position: absolute;

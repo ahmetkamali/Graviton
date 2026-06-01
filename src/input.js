@@ -6,10 +6,12 @@ export const mouse = {
   rightJustDown: false,
 };
 export const keys = new Set();
+export const justKeys = new Set();
 
 let pendingDown = false;
 let pendingUp = false;
 let pendingRightDown = false;
+const pendingKeys = new Set();
 
 export function initInput(canvas) {
   canvas.addEventListener('mousemove', e => {
@@ -30,7 +32,7 @@ export function initInput(canvas) {
 
   canvas.addEventListener('contextmenu', e => e.preventDefault());
 
-  window.addEventListener('keydown', e => keys.add(e.code));
+  window.addEventListener('keydown', e => { keys.add(e.code); pendingKeys.add(e.code); });
   window.addEventListener('keyup', e => keys.delete(e.code));
 }
 
@@ -41,4 +43,7 @@ export function pollInput() {
   pendingDown = false;
   pendingUp = false;
   pendingRightDown = false;
+  justKeys.clear();
+  for (const k of pendingKeys) justKeys.add(k);
+  pendingKeys.clear();
 }

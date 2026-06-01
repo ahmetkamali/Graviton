@@ -39,14 +39,14 @@ export function checkEndZone(ship, endZone) {
 }
 
 export function isOutOfBounds(ship, w, h) {
-  const margin = 200;
-  return ship.x < -margin || ship.x > w + margin || ship.y < -margin || ship.y > h + margin;
+  const r = ship.radius;
+  return ship.x - r < 0 || ship.x + r > w || ship.y - r < 0 || ship.y + r > h;
 }
 
 export function failsSpeedZone(ship, zones) {
   const speed = Math.sqrt(ship.vx * ship.vx + ship.vy * ship.vy);
   for (const zone of zones) {
-    if (zone.contains(ship) && speed < zone.minSpeed) return true;
+    if (zone.contains(ship) && speed < zone.minSpeed - 1) return true;
   }
   return false;
 }

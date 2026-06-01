@@ -1,4 +1,4 @@
-import { initInput, mouse, pollInput } from './input.js';
+import { initInput, mouse, justKeys, pollInput } from './input.js';
 import { applyGravity, integrate, checkCollision, checkEndZone, isOutOfBounds, failsSpeedZone } from './physics.js';
 import {
   clear, drawBackground, drawEndZone, drawAimIndicator, drawShipHandle,
@@ -7,7 +7,7 @@ import {
 } from './renderer.js';
 import { initMainMenu, showMainMenu, hideMainMenu } from './ui/mainMenu.js';
 import { initLevelSelect, showLevelSelect, hideLevelSelect } from './ui/levelSelect.js';
-import { drawPlacementHUD, drawSimulationHUD, showResultOverlay, hideResultOverlay, getLaunchBtn } from './ui/hud.js';
+import { drawPlacementHUD, drawSimulationHUD, showResultOverlay, hideResultOverlay, getLaunchBtn, getMenuBtn } from './ui/hud.js';
 import { Ship } from './entities/ship.js';
 import { Star } from './entities/star.js';
 import { Planet } from './entities/planet.js';
@@ -27,6 +27,7 @@ canvas.height = VIEWPORT_HEIGHT;
 
 const camera = { x: 0 };
 let worldWidth = VIEWPORT_WIDTH;
+let predictionEnabled = true;
 
 const LAUNCH_SPEED = 250;
 const STAR_SPAWN_CLEARANCE = 40;
@@ -163,12 +164,12 @@ function triggerExplosion(x, y) {
 
 function softReset() {
   for (const p of planets) {
-    if (p.isPredefined) { p.angle = p.startAngle; p.syncPosition(); }
+    p.angle = p.startAngle;
+    p.syncPosition();
   }
   const playerPlanets = planets.filter(p => !p.isPredefined);
   starsLeft   = currentLevel.starsAvailable - placedStars.length;
   planetsLeft = (currentLevel.planetsAvailable ?? 0) - playerPlanets.length;
-  aimAngle    = 0;
   shipDragging = false;
   drag = { active: false, kind: null, obj: null };
   ship = new Ship({ x: currentLevel.ship.x, y: currentLevel.ship.y });
@@ -251,6 +252,12 @@ function isInsideLaunchBtn(px, py) {
          py >= btn.y && py <= btn.y + btn.h;
 }
 
+function isInsideMenuBtn(px, py) {
+  const btn = getMenuBtn();
+  return px >= btn.x && px <= btn.x + btn.w &&
+         py >= btn.y && py <= btn.y + btn.h;
+}
+
 function placedStarAtPoint(mx, my) {
   for (let i = 0; i < placedStars.length; i++) {
     const s = placedStars[i];
@@ -261,7 +268,7 @@ function placedStarAtPoint(mx, my) {
   return -1;
 }
 
-const SHIP_GRAB_RADIUS = 18;
+const SHIP_GRAB_RADIUS = 48;
 
 function isOverShip(mx, my) {
   const dx = mx - ship.x;
@@ -277,7 +284,15 @@ function updatePlacement() {
   const wmx = mouse.x + camera.x;  // world-space mouse x
   const wmy = mouse.y;             // y axis never scrolls
 
+  const DEG = Math.PI / 180;
+  if (justKeys.has('ArrowUp'))   aimAngle = clampAngle(aimAngle - DEG, shipCfg.aimRange);
+  if (justKeys.has('ArrowDown')) aimAngle = clampAngle(aimAngle + DEG, shipCfg.aimRange);
+
   if (mouse.justDown) {
+    if (isInsideMenuBtn(mouse.x, mouse.y)) {
+      setState('MAIN_MENU');
+      return;
+    }
     if (isInsideLaunchBtn(mouse.x, mouse.y)) {
       launch();
       return;
@@ -328,6 +343,9 @@ function updatePlacement() {
     if (drag.kind === 'star') {
       drag.obj.x = wmx;
       drag.obj.y = wmy;
+      for (const p of planets) {
+        if (p.parent === drag.obj) p.syncPosition();
+      }
     }
 
     if (mouse.justUp) {
@@ -361,6 +379,52 @@ function updatePlacement() {
   }
 }
 
+function predictTrajectory() {
+  const STEPS = 300;
+  const FADE_STEPS = 30; // 0.5s at 60fps
+  const dt = 1 / 60;
+
+  // Lightweight planet proxies that we can step forward independently
+  const simPlanets = planets.map(p => ({
+    x: p.x, y: p.y,
+    mass: p.mass, effectRadius: p.effectRadius, radius: p.radius,
+    angle: p.angle, direction: p.direction, angularSpeed: p.angularSpeed,
+    rr: p.ringRadius(), px: p.parent.x, py: p.parent.y,
+  }));
+
+  const allSources = [...fixedStars, ...placedStars, ...simPlanets];
+
+  const sim = {
+    x: ship.x, y: ship.y,
+    vx: Math.cos(aimAngle) * LAUNCH_SPEED,
+    vy: Math.sin(aimAngle) * LAUNCH_SPEED,
+    radius: ship.radius,
+  };
+
+  const pts = [];
+  let impact = null;
+
+  for (let i = 0; i < STEPS; i++) {
+    for (const sp of simPlanets) {
+      sp.angle += sp.direction * sp.angularSpeed * dt;
+      sp.x = sp.px + Math.cos(sp.angle) * sp.rr;
+      sp.y = sp.py + Math.sin(sp.angle) * sp.rr;
+    }
+    applyGravity(sim, allSources, dt);
+    integrate(sim, dt);
+    pts.push({ x: sim.x, y: sim.y });
+    if (checkEndZone(sim, currentLevel.endZone)) {
+      return { pts, impact: { x: sim.x, y: sim.y }, won: true, fadeFrom: Math.max(0, pts.length - FADE_STEPS) };
+    }
+    if (checkCollision(sim, allSources) || isOutOfBounds(sim, worldWidth, canvas.height) || failsSpeedZone(sim, speedZones)) {
+      impact = { x: sim.x, y: sim.y };
+      break;
+    }
+  }
+
+  return { pts, impact, won: false, fadeFrom: Math.max(0, pts.length - FADE_STEPS) };
+}
+
 function renderPlacement() {
   const w = canvas.width;
   const h = canvas.height;
@@ -379,6 +443,47 @@ function renderPlacement() {
   for (const star of fixedStars) star.draw(ctx);
   for (const planet of planets) planet.draw(ctx);
   for (const star of placedStars) star.draw(ctx);
+
+  // Trajectory prediction
+  const { pts, impact, won, fadeFrom } = predictionEnabled ? predictTrajectory() : { pts: [], impact: null, won: false, fadeFrom: 0 };
+  const skipR2 = 65 * 65;
+  for (let i = 0; i < pts.length; i += 2) {
+    const dx = pts[i].x - ship.x, dy = pts[i].y - ship.y;
+    if (dx * dx + dy * dy < skipR2) continue;
+    const alpha = i < fadeFrom
+      ? 0.55
+      : ((pts.length - i) / (pts.length - fadeFrom)) * 0.55;
+    ctx.beginPath();
+    ctx.arc(pts[i].x, pts[i].y, 1.8, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(0,229,255,${alpha.toFixed(3)})`;
+    ctx.fill();
+  }
+  if (impact) {
+    ctx.save();
+    if (won) {
+      ctx.shadowColor = '#00ff88';
+      ctx.shadowBlur = 16;
+      ctx.beginPath();
+      ctx.arc(impact.x, impact.y, 7, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(0,255,136,0.25)';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(impact.x, impact.y, 4, 0, Math.PI * 2);
+      ctx.fillStyle = '#00ff88';
+      ctx.fill();
+    } else {
+      ctx.shadowColor = '#ff3355';
+      ctx.shadowBlur = 10;
+      ctx.strokeStyle = '#ff3355';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(impact.x - 6, impact.y - 6); ctx.lineTo(impact.x + 6, impact.y + 6);
+      ctx.moveTo(impact.x + 6, impact.y - 6); ctx.lineTo(impact.x - 6, impact.y + 6);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
   ship.draw(ctx, aimAngle);
   const shipHovered = !drag.active && !shipDragging && isOverShip(wmx, mouse.y);
   drawShipHandle(ctx, ship, shipHovered || shipDragging);
@@ -399,6 +504,11 @@ function renderPlacement() {
 }
 
 function updateSimulation(dt) {
+  if (mouse.justDown && isInsideLaunchBtn(mouse.x, mouse.y)) {
+    softReset();
+    return;
+  }
+
   for (const p of planets) p.update(dt);
 
   const allSources = [...fixedStars, ...placedStars, ...planets];
@@ -447,7 +557,7 @@ function renderSimulation() {
   ship.draw(ctx, simAngle);
   ctx.restore();
 
-  drawSimulationHUD(ctx, { ship });
+  drawSimulationHUD(ctx, { ship }, canvas.width);
 }
 
 function tick(timestamp) {
@@ -473,6 +583,9 @@ function tick(timestamp) {
 
 initInput(canvas);
 slider.addEventListener('input', () => { camera.x = Number(slider.value); });
+document.getElementById('predictionToggle').addEventListener('change', e => {
+  predictionEnabled = e.target.checked;
+});
 
 initMainMenu({ onPlay: () => setState('LEVEL_SELECT') });
 
