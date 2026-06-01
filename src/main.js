@@ -225,7 +225,11 @@ function updatePlacement() {
         const dx = mouse.x - shipCfg.x;
         const dy = mouse.y - shipCfg.y;
         const tooClose = Math.sqrt(dx * dx + dy * dy) < STAR_SPAWN_CLEARANCE;
-        if (tooClose) {
+        const overlaps = [...fixedStars, ...placedStars].some(s => {
+          const ex = mouse.x - s.x, ey = mouse.y - s.y;
+          return Math.sqrt(ex * ex + ey * ey) < drag.obj.radius + s.radius;
+        });
+        if (tooClose || overlaps) {
           starsLeft++;
         } else {
           placedStars.push(drag.obj);
