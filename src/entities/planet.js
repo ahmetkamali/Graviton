@@ -10,11 +10,12 @@ export class Planet {
     direction    = DEFAULT_DIRECTION,
     radius       = 10,
     mass         = 3000,
-    effectRadius = 90,
+    effectRadius = 180,
     isPredefined = false,
   }) {
     this.parent       = parent;
     this.ringIndex    = ringIndex;
+    this.startAngle   = startAngle;
     this.angle        = startAngle;
     this.angularSpeed = angularSpeed;
     this.direction    = direction;
@@ -42,20 +43,21 @@ export class Planet {
 
   draw(ctx) {
     const r = this.ringRadius();
+    const color = this.isPredefined ? '#ff4444' : '#5599ff';
+    const orbitAlpha = this.isPredefined ? 'rgba(255,80,80,0.25)' : 'rgba(80,160,255,0.25)';
+    const effectAlpha = this.isPredefined ? 'rgba(255,80,80,.3)' : 'rgba(80,160,255,.3)';
 
-    // Orbit ring — subtle dashed
+    // Orbit ring
     ctx.beginPath();
     ctx.arc(this.parent.x, this.parent.y, r, 0, Math.PI * 2);
-    ctx.strokeStyle = 'rgba(80, 160, 255, 0.08)';
+    ctx.strokeStyle = orbitAlpha;
     ctx.lineWidth = 1;
-    ctx.setLineDash([2, 6]);
     ctx.stroke();
-    ctx.setLineDash([]);
 
     // Effect radius ring
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.effectRadius, 0, Math.PI * 2);
-    ctx.strokeStyle = 'rgba(80,160,255,.13)';
+    ctx.strokeStyle = effectAlpha;
     ctx.lineWidth = 1.5;
     ctx.setLineDash([3, 8]);
     ctx.stroke();
@@ -63,11 +65,11 @@ export class Planet {
 
     // Planet body — flat color with glow
     ctx.save();
-    ctx.shadowColor = '#5599ff';
+    ctx.shadowColor = color;
     ctx.shadowBlur  = 10;
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-    ctx.fillStyle = '#5599ff';
+    ctx.fillStyle = color;
     ctx.fill();
     ctx.restore();
   }

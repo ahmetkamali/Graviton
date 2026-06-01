@@ -1,5 +1,5 @@
 export class Star {
-  constructor({ x, y, mass = 8000, radius = 22, effectRadius = 220, isObstacle = false }) {
+  constructor({ x, y, mass = 8000, radius = 22, effectRadius = 250, isObstacle = false }) {
     this.x = x;
     this.y = y;
     this.mass = mass;
@@ -16,7 +16,7 @@ export class Star {
     // Effect radius — dashed ring
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.effectRadius, 0, Math.PI * 2);
-    ctx.strokeStyle = obs ? 'rgba(255,80,80,.13)' : 'rgba(255,200,0,.13)';
+    ctx.strokeStyle = obs ? 'rgba(255,80,80,.3)' : 'rgba(255,200,0,.3)';
     ctx.lineWidth = 1.5;
     ctx.setLineDash([3, 8]);
     ctx.stroke();

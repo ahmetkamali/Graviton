@@ -55,8 +55,8 @@ html, body {
   z-index: 1;
 }
 
-.panel.is-hidden {
-  display: none;
+.is-hidden {
+  display: none !important;
 }
 
 /* ─── Main menu + level select — space background ────── */
@@ -316,4 +316,58 @@ html, body {
   padding: .65rem 2.2rem;
   font-size: .8rem;
   letter-spacing: .25em;
+}
+
+/* ─── Placement scroll bar ───────────────────────────── */
+.placement-scroll {
+  position: absolute;
+  top: calc(50% - 328px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  height: 8px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: rgba(0, 229, 255, 0.12);
+  border: 1px solid rgba(0, 229, 255, 0.28);
+  border-radius: 4px;
+  outline: none;
+  cursor: pointer;
+  transition: border-color .2s;
+}
+
+.placement-scroll:hover {
+  border-color: rgba(0, 229, 255, 0.55);
+}
+
+.placement-scroll::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 8px var(--cyan), 0 0 18px rgba(0, 229, 255, 0.4);
+  cursor: pointer;
+  margin-top: -6px;
+}
+
+.placement-scroll::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--cyan);
+  box-shadow: 0 0 8px var(--cyan), 0 0 18px rgba(0, 229, 255, 0.4);
+  cursor: pointer;
+  border: none;
+}
+
+.placement-scroll::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 4px;
+}
+
+.placement-scroll::-moz-range-track {
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(0, 229, 255, 0.12);
 }

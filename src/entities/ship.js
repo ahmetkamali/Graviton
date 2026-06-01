@@ -52,12 +52,6 @@ export class Ship {
     ctx.fillStyle = bodyGrad;
     ctx.fill();
 
-    // Bright nose accent
-    ctx.beginPath();
-    ctx.arc(r * 1.4, 0, 2.5, 0, Math.PI * 2);
-    ctx.fillStyle = '#ffffff';
-    ctx.fill();
-
     ctx.restore();
   }
 }

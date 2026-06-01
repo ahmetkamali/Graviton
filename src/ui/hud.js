@@ -61,6 +61,7 @@ export function showResultOverlay(state) {
   msg.style.animation = 'none';
   void msg.offsetWidth;
   msg.style.animation = '';
+  document.getElementById('retryBtn').textContent = isComplete ? 'Next' : 'Retry';
   document.getElementById('resultPanel').classList.remove('is-hidden');
 }
 

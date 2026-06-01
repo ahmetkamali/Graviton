@@ -17,9 +17,16 @@ import { getCompleted, markCompleted } from './data/progression.js';
 
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
+const slider = document.getElementById('placementScroll');
 
-canvas.width = 1000;
-canvas.height = 600;
+const VIEWPORT_WIDTH  = 1200;
+const VIEWPORT_HEIGHT = 600;
+
+canvas.width  = VIEWPORT_WIDTH;
+canvas.height = VIEWPORT_HEIGHT;
+
+const camera = { x: 0 };
+let worldWidth = VIEWPORT_WIDTH;
 
 const LAUNCH_SPEED = 250;
 const STAR_SPAWN_CLEARANCE = 40;
@@ -45,6 +52,7 @@ function setState(next) {
   hideMainMenu();
   hideLevelSelect();
   hideResultOverlay();
+  slider.classList.add('is-hidden');
 
   if (next === 'MAIN_MENU') showMainMenu();
   else if (next === 'LEVEL_SELECT') showLevelSelect(getCompleted());
@@ -93,8 +101,10 @@ function attachedPlanetAtPoint(mx, my) {
 
 function loadLevel(id) {
   currentLevel = levels.find(l => l.id === id);
-  canvas.width = currentLevel.canvasWidth ?? 1000;
-  canvas.height = 600;
+  worldWidth = currentLevel.canvasWidth ?? 1000;
+  canvas.width  = Math.min(worldWidth, VIEWPORT_WIDTH);
+  canvas.height = VIEWPORT_HEIGHT;
+  camera.x = 0;
 
   placedStars = [];
   fixedStars = currentLevel.fixedObstacles.map(o => new Star(o));
@@ -117,6 +127,13 @@ function loadLevel(id) {
   drag = { active: false, kind: null, obj: null };
   ship = new Ship({ x: currentLevel.ship.x, y: currentLevel.ship.y });
   setState('PLACEMENT');
+
+  if (worldWidth > canvas.width) {
+    slider.max   = worldWidth - canvas.width;
+    slider.value = 0;
+    slider.style.width = canvas.width + 'px';
+    slider.classList.remove('is-hidden');
+  }
 }
 
 function launch() {
@@ -130,7 +147,7 @@ function resetLevel() {
 }
 
 function triggerExplosion(x, y) {
-  const ex = Math.max(8, Math.min(canvas.width  - 8, x));
+  const ex = Math.max(8, Math.min(worldWidth - 8, x));
   const ey = Math.max(8, Math.min(canvas.height - 8, y));
   explosion = {
     x: ex, y: ey, elapsed: 0, flash: 1,
@@ -145,7 +162,9 @@ function triggerExplosion(x, y) {
 }
 
 function softReset() {
-  explosion = null;
+  for (const p of planets) {
+    if (p.isPredefined) { p.angle = p.startAngle; p.syncPosition(); }
+  }
   const playerPlanets = planets.filter(p => !p.isPredefined);
   starsLeft   = currentLevel.starsAvailable - placedStars.length;
   planetsLeft = (currentLevel.planetsAvailable ?? 0) - playerPlanets.length;
@@ -153,7 +172,18 @@ function softReset() {
   shipDragging = false;
   drag = { active: false, kind: null, obj: null };
   ship = new Ship({ x: currentLevel.ship.x, y: currentLevel.ship.y });
+  camera.x = 0;
+  slider.value = 0;
+  if (worldWidth > canvas.width) slider.classList.remove('is-hidden');
+  hideResultOverlay();
   gameState = 'PLACEMENT';
+}
+
+function nextLevel() {
+  const idx = levels.findIndex(l => l.id === currentLevel.id);
+  const next = levels[idx + 1];
+  if (next) loadLevel(next.id);
+  else setState('MAIN_MENU');
 }
 
 function updateExplosion(dt) {
@@ -166,7 +196,10 @@ function updateExplosion(dt) {
     p.life -= p.decay * dt;
   }
   explosion.particles = explosion.particles.filter(p => p.life > 0);
-  if (explosion.elapsed >= 1) softReset();
+  if (explosion.elapsed >= 1) {
+    explosion = null;
+    setState('LEVEL_FAILED');
+  }
 }
 
 function renderExplosion() {
@@ -174,6 +207,9 @@ function renderExplosion() {
   const h = canvas.height;
   clear(ctx, w, h);
   drawBackground(ctx, w, h);
+
+  ctx.save();
+  ctx.translate(-camera.x, 0);
   drawEndZone(ctx, currentLevel.endZone);
   for (const zone of speedZones) zone.draw(ctx);
   for (const star of fixedStars) star.draw(ctx);
@@ -198,6 +234,8 @@ function renderExplosion() {
     ctx.fillStyle = `rgba(255,${g},50,${a})`;
     ctx.fill();
   }
+  ctx.restore();
+
   ctx.restore();
 }
 
@@ -236,6 +274,8 @@ function updatePlacement() {
   const h = canvas.height;
   const { ship: shipCfg, starsAvailable, planetsAvailable = 0 } = currentLevel;
   const hotbar = getHotbar(w, h, starsAvailable, planetsAvailable);
+  const wmx = mouse.x + camera.x;  // world-space mouse x
+  const wmy = mouse.y;             // y axis never scrolls
 
   if (mouse.justDown) {
     if (isInsideLaunchBtn(mouse.x, mouse.y)) {
@@ -248,18 +288,18 @@ function updatePlacement() {
       if (hoveredSlot !== null) {
         if (hoveredSlot.group === 'star') {
           starsLeft--;
-          drag = { active: true, kind: 'star', obj: new Star({ x: mouse.x, y: mouse.y }) };
+          drag = { active: true, kind: 'star', obj: new Star({ x: wmx, y: wmy }) };
         } else {
           planetsLeft--;
           drag = { active: true, kind: 'planet', obj: {} };
         }
       } else {
-        const starIdx = placedStarAtPoint(mouse.x, mouse.y);
+        const starIdx = placedStarAtPoint(wmx, wmy);
         if (starIdx !== -1) {
           const [removed] = placedStars.splice(starIdx, 1);
           drag = { active: true, kind: 'star', obj: removed };
         } else {
-          const planet = attachedPlanetAtPoint(mouse.x, mouse.y);
+          const planet = attachedPlanetAtPoint(wmx, wmy);
           if (planet) {
             const config = {
               angularSpeed: planet.angularSpeed,
@@ -270,7 +310,7 @@ function updatePlacement() {
             };
             removePlanet(planet);
             drag = { active: true, kind: 'planet', obj: config };
-          } else if (isOverShip(mouse.x, mouse.y)) {
+          } else if (isOverShip(wmx, wmy)) {
             shipDragging = true;
           }
         }
@@ -279,15 +319,15 @@ function updatePlacement() {
   }
 
   if (shipDragging) {
-    const rawAngle = Math.atan2(mouse.y - ship.y, mouse.x - ship.x);
+    const rawAngle = Math.atan2(wmy - ship.y, wmx - ship.x);
     aimAngle = clampAngle(rawAngle, shipCfg.aimRange);
     if (mouse.justUp) shipDragging = false;
   }
 
   if (drag.active) {
     if (drag.kind === 'star') {
-      drag.obj.x = mouse.x;
-      drag.obj.y = mouse.y;
+      drag.obj.x = wmx;
+      drag.obj.y = wmy;
     }
 
     if (mouse.justUp) {
@@ -295,11 +335,11 @@ function updatePlacement() {
         if (drag.kind === 'star') starsLeft++;
         else planetsLeft++;
       } else if (drag.kind === 'star') {
-        const dx = mouse.x - shipCfg.x;
-        const dy = mouse.y - shipCfg.y;
+        const dx = wmx - shipCfg.x;
+        const dy = wmy - shipCfg.y;
         const tooClose = Math.sqrt(dx * dx + dy * dy) < STAR_SPAWN_CLEARANCE;
         const overlaps = [...fixedStars, ...placedStars].some(s => {
-          const ex = mouse.x - s.x, ey = mouse.y - s.y;
+          const ex = wmx - s.x, ey = wmy - s.y;
           return Math.sqrt(ex * ex + ey * ey) < drag.obj.radius + s.radius;
         });
         if (tooClose || overlaps) {
@@ -308,9 +348,9 @@ function updatePlacement() {
           placedStars.push(drag.obj);
         }
       } else {
-        const target = nearestAttachStar(mouse.x, mouse.y);
+        const target = nearestAttachStar(wmx, wmy);
         if (target) {
-          const startAngle = Math.atan2(mouse.y - target.y, mouse.x - target.x);
+          const startAngle = Math.atan2(wmy - target.y, wmx - target.x);
           attachPlanet(target, startAngle, drag.obj);
         } else {
           planetsLeft++;
@@ -326,21 +366,25 @@ function renderPlacement() {
   const h = canvas.height;
   const { endZone, ship: shipCfg, starsAvailable, planetsAvailable = 0 } = currentLevel;
   const hotbar = getHotbar(w, h, starsAvailable, planetsAvailable);
+  const wmx = mouse.x + camera.x;
 
   clear(ctx, w, h);
   drawBackground(ctx, w, h);
-  drawEndZone(ctx, endZone);
 
+  ctx.save();
+  ctx.translate(-camera.x, 0);
+
+  drawEndZone(ctx, endZone);
   for (const zone of speedZones) zone.draw(ctx);
   for (const star of fixedStars) star.draw(ctx);
   for (const planet of planets) planet.draw(ctx);
   for (const star of placedStars) star.draw(ctx);
-
   ship.draw(ctx, aimAngle);
-
-  const shipHovered = !drag.active && !shipDragging && isOverShip(mouse.x, mouse.y);
+  const shipHovered = !drag.active && !shipDragging && isOverShip(wmx, mouse.y);
   drawShipHandle(ctx, ship, shipHovered || shipDragging);
   drawAimIndicator(ctx, ship, aimAngle, shipCfg.aimRange, shipDragging);
+
+  ctx.restore();
 
   const hoverSlot = drag.active ? null : getHoveredFilledSlot(mouse.x, mouse.y, hotbar, starsLeft, planetsLeft);
   const isDragHover = drag.active && isOverHotbar(mouse.x, mouse.y, hotbar);
@@ -362,6 +406,8 @@ function updateSimulation(dt) {
   integrate(ship, dt);
   ship.recordTrail();
 
+  camera.x = Math.max(0, Math.min(worldWidth - canvas.width, ship.x - canvas.width / 2));
+
   if (checkCollision(ship, allSources)) {
     triggerExplosion(ship.x, ship.y);
     return;
@@ -373,7 +419,7 @@ function updateSimulation(dt) {
     return;
   }
 
-  if (isOutOfBounds(ship, canvas.width, canvas.height)) {
+  if (isOutOfBounds(ship, worldWidth, canvas.height)) {
     triggerExplosion(ship.x, ship.y);
     return;
   }
@@ -389,6 +435,9 @@ function renderSimulation() {
   const { endZone } = currentLevel;
   clear(ctx, w, h);
   drawBackground(ctx, w, h);
+
+  ctx.save();
+  ctx.translate(-camera.x, 0);
   drawEndZone(ctx, endZone);
   for (const zone of speedZones) zone.draw(ctx);
   for (const star of fixedStars) star.draw(ctx);
@@ -396,6 +445,8 @@ function renderSimulation() {
   for (const star of placedStars) star.draw(ctx);
   const simAngle = (ship.vx !== 0 || ship.vy !== 0) ? Math.atan2(ship.vy, ship.vx) : aimAngle;
   ship.draw(ctx, simAngle);
+  ctx.restore();
+
   drawSimulationHUD(ctx, { ship });
 }
 
@@ -414,13 +465,14 @@ function tick(timestamp) {
     renderSimulation();
   } else if (gameState === 'EXPLODING') {
     updateExplosion(dt);
-    renderExplosion();
+    if (explosion) renderExplosion();
   }
 
   requestAnimationFrame(tick);
 }
 
 initInput(canvas);
+slider.addEventListener('input', () => { camera.x = Number(slider.value); });
 
 initMainMenu({ onPlay: () => setState('LEVEL_SELECT') });
 
@@ -429,7 +481,10 @@ initLevelSelect({
   onBack: () => setState('MAIN_MENU'),
 });
 
-document.getElementById('retryBtn').addEventListener('click', resetLevel);
+document.getElementById('retryBtn').addEventListener('click', () => {
+  if (gameState === 'LEVEL_COMPLETE') nextLevel();
+  else softReset();
+});
 document.getElementById('menuBtn').addEventListener('click', () => setState('MAIN_MENU'));
 
 setState('MAIN_MENU');
