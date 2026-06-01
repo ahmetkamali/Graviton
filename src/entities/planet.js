@@ -1,23 +1,25 @@
-const RING_BASE_OFFSET = 36;
-const RING_SPACING = 32;
+const RING_BASE_OFFSET      = 36;
+const RING_SPACING          = 32;
 const DEFAULT_ANGULAR_SPEED = 0.9;
-const DEFAULT_DIRECTION = 1;
+const DEFAULT_DIRECTION     = 1;
 
 export class Planet {
   constructor({
     parent, ringIndex, startAngle,
     angularSpeed = DEFAULT_ANGULAR_SPEED,
-    direction = DEFAULT_DIRECTION,
-    radius = 10, mass = 3000, effectRadius = 90,
+    direction    = DEFAULT_DIRECTION,
+    radius       = 10,
+    mass         = 3000,
+    effectRadius = 90,
     isPredefined = false,
   }) {
-    this.parent = parent;
-    this.ringIndex = ringIndex;
-    this.angle = startAngle;
+    this.parent       = parent;
+    this.ringIndex    = ringIndex;
+    this.angle        = startAngle;
     this.angularSpeed = angularSpeed;
-    this.direction = direction;
-    this.radius = radius;
-    this.mass = mass;
+    this.direction    = direction;
+    this.radius       = radius;
+    this.mass         = mass;
     this.effectRadius = effectRadius;
     this.isPredefined = isPredefined;
     this.syncPosition();
@@ -41,25 +43,40 @@ export class Planet {
   draw(ctx) {
     const r = this.ringRadius();
 
+    // Orbit ring — subtle dashed
     ctx.beginPath();
     ctx.arc(this.parent.x, this.parent.y, r, 0, Math.PI * 2);
-    ctx.strokeStyle = 'rgba(150, 200, 255, 0.1)';
+    ctx.strokeStyle = 'rgba(80, 160, 255, 0.08)';
     ctx.lineWidth = 1;
-    ctx.setLineDash([2, 4]);
+    ctx.setLineDash([2, 6]);
     ctx.stroke();
     ctx.setLineDash([]);
 
+    // Effect radius ring
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.effectRadius, 0, Math.PI * 2);
-    ctx.strokeStyle = 'rgba(100, 180, 255, 0.2)';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([4, 6]);
+    ctx.strokeStyle = 'rgba(80,160,255,.13)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([3, 8]);
     ctx.stroke();
     ctx.setLineDash([]);
 
+    // Planet body
+    const g = ctx.createRadialGradient(
+      this.x - this.radius * 0.3, this.y - this.radius * 0.3, 0,
+      this.x, this.y, this.radius
+    );
+    g.addColorStop(0,   '#bbddff');
+    g.addColorStop(0.5, '#5599ff');
+    g.addColorStop(1,   '#1a3aaa');
+
+    ctx.save();
+    ctx.shadowColor = '#5599ff';
+    ctx.shadowBlur  = 10;
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-    ctx.fillStyle = '#5599ff';
+    ctx.fillStyle = g;
     ctx.fill();
+    ctx.restore();
   }
 }

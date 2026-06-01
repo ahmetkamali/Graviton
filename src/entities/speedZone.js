@@ -2,7 +2,7 @@ export class SpeedZone {
   constructor({ x, y, width, height, minSpeed }) {
     this.x = x;
     this.y = y;
-    this.width = width;
+    this.width  = width;
     this.height = height;
     this.minSpeed = minSpeed;
   }
@@ -13,14 +13,18 @@ export class SpeedZone {
   }
 
   draw(ctx) {
-    ctx.fillStyle = 'rgba(255, 100, 0, 0.08)';
+    ctx.fillStyle = 'rgba(255, 130, 0, 0.06)';
     ctx.fillRect(this.x, this.y, this.width, this.height);
-    ctx.strokeStyle = 'rgba(255, 120, 0, 0.55)';
-    ctx.lineWidth = 2;
+
+    ctx.strokeStyle = 'rgba(255, 150, 0, 0.5)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([6, 5]);
     ctx.strokeRect(this.x, this.y, this.width, this.height);
-    ctx.fillStyle = 'rgba(255, 140, 0, 0.7)';
-    ctx.font = '12px monospace';
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = 'rgba(255, 165, 0, 0.8)';
+    ctx.font = '11px "Share Tech Mono", monospace';
     ctx.textAlign = 'center';
-    ctx.fillText(`≥${this.minSpeed}`, this.x + this.width / 2, this.y - 6);
+    ctx.fillText(`MIN ${this.minSpeed}`, this.x + this.width / 2, this.y - 7);
   }
 }

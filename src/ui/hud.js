@@ -1,36 +1,66 @@
 export function getLaunchBtn(canvasWidth) {
-  return { x: canvasWidth - 110, y: 16, w: 96, h: 36 };
+  return { x: canvasWidth - 118, y: 12, w: 104, h: 38 };
 }
 
 export function drawPlacementHUD(ctx, canvasWidth) {
-  ctx.font = '13px monospace';
+  ctx.font = '11px "Share Tech Mono", monospace';
   ctx.textAlign = 'left';
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-  ctx.fillText('Drag ship to aim  ·  Drag items from bar below', 14, 24);
+  ctx.fillStyle = 'rgba(0, 229, 255, 0.3)';
+  ctx.fillText('AIM  ·  PLACE  ·  LAUNCH', 14, 28);
 
   const { x, y, w, h } = getLaunchBtn(canvasWidth);
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
-  ctx.fillRect(x, y, w, h);
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+
+  ctx.save();
+  ctx.shadowColor = '#00e5ff';
+  ctx.shadowBlur  = 14;
+
+  // Background
+  ctx.fillStyle = 'rgba(0, 229, 255, 0.08)';
+  ctx.beginPath();
+  ctx.roundRect(x, y, w, h, 4);
+  ctx.fill();
+
+  // Border
+  ctx.strokeStyle = 'rgba(0, 229, 255, 0.72)';
   ctx.lineWidth = 1.5;
-  ctx.strokeRect(x, y, w, h);
-  ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 14px monospace';
+  ctx.beginPath();
+  ctx.roundRect(x, y, w, h, 4);
+  ctx.stroke();
+
+  ctx.restore();
+
+  ctx.fillStyle = '#00e5ff';
+  ctx.font = 'bold 13px "Share Tech Mono", monospace';
   ctx.textAlign = 'center';
-  ctx.fillText('LAUNCH', x + w / 2, y + 23);
+  ctx.fillText('LAUNCH', x + w / 2, y + h / 2 + 5);
 }
 
 export function drawSimulationHUD(ctx, { ship }) {
   const speed = Math.sqrt(ship.vx * ship.vx + ship.vy * ship.vy);
-  ctx.font = '14px monospace';
+  const color = speed > 350 ? '#ffcc00' : '#00e5ff';
+
+  ctx.fillStyle = 'rgba(4, 8, 28, 0.6)';
+  ctx.fillRect(10, 10, 148, 30);
+
+  ctx.strokeStyle = 'rgba(0, 229, 255, 0.2)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(10, 10, 148, 30);
+
+  ctx.font = '12px "Share Tech Mono", monospace';
   ctx.textAlign = 'left';
-  ctx.fillStyle = '#ffffff';
-  ctx.fillText(`Speed: ${speed.toFixed(0)}`, 14, 24);
+  ctx.fillStyle = color;
+  ctx.fillText(`SPEED  ${speed.toFixed(0)}`, 20, 30);
 }
 
 export function showResultOverlay(state) {
-  document.getElementById('resultMessage').textContent =
-    state === 'LEVEL_COMPLETE' ? 'Level Complete!' : 'Level Failed';
+  const isComplete = state === 'LEVEL_COMPLETE';
+  const msg = document.getElementById('resultMessage');
+  msg.textContent = isComplete ? 'Level Complete!' : 'Level Failed';
+  msg.classList.toggle('is-failure', !isComplete);
+  // Restart the CSS animation on re-show
+  msg.style.animation = 'none';
+  void msg.offsetWidth;
+  msg.style.animation = '';
   document.getElementById('resultPanel').classList.remove('is-hidden');
 }
 

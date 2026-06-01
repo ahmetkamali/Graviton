@@ -259,7 +259,7 @@ function renderPlacement() {
   for (const planet of planets) planet.draw(ctx);
   for (const star of placedStars) star.draw(ctx);
 
-  ship.draw(ctx);
+  ship.draw(ctx, aimAngle);
 
   const shipHovered = !drag.active && !shipDragging && isOverShip(mouse.x, mouse.y);
   drawShipHandle(ctx, ship, shipHovered || shipDragging);
@@ -317,7 +317,8 @@ function renderSimulation() {
   for (const star of fixedStars) star.draw(ctx);
   for (const planet of planets) planet.draw(ctx);
   for (const star of placedStars) star.draw(ctx);
-  ship.draw(ctx);
+  const simAngle = (ship.vx !== 0 || ship.vy !== 0) ? Math.atan2(ship.vy, ship.vx) : aimAngle;
+  ship.draw(ctx, simAngle);
   drawSimulationHUD(ctx, { ship });
 }
 

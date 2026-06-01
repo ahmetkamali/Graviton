@@ -1,13 +1,31 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap');
+
+/* ─── Reset ──────────────────────────────────────────── */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 
+/* ─── Variables ──────────────────────────────────────── */
+:root {
+  --cyan:  #00e5ff;
+  --amber: #ffcc00;
+  --green: #00ff88;
+  --red:   #ff3355;
+  --bg:    #010209;
+
+  --glow-c-sm: 0 0 6px #00e5ff, 0 0 14px rgba(0,229,255,.4);
+  --glow-c-md: 0 0 10px #00e5ff, 0 0 26px rgba(0,229,255,.5), 0 0 58px rgba(0,229,255,.2);
+  --glow-g-sm: 0 0 6px #00ff88, 0 0 14px rgba(0,255,136,.4);
+  --glow-r-sm: 0 0 6px #ff3355, 0 0 14px rgba(255,51,85,.4);
+}
+
+/* ─── Base ───────────────────────────────────────────── */
 html, body {
   width: 100%;
   height: 100%;
-  background: #000;
+  background: var(--bg);
   overflow: hidden;
 }
 
@@ -19,6 +37,7 @@ html, body {
   transform: translate(-50%, -50%);
 }
 
+/* ─── Panel base ─────────────────────────────────────── */
 .panel {
   position: absolute;
   inset: 0;
@@ -26,21 +45,264 @@ html, body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1.5rem;
-  background: #000;
+  gap: 2rem;
   pointer-events: auto;
+  overflow: hidden;
+}
+
+.panel > * {
+  position: relative;
+  z-index: 1;
 }
 
 .panel.is-hidden {
   display: none;
 }
 
+/* ─── Main menu + level select — space background ────── */
+#mainMenuPanel,
+#levelSelectPanel {
+  background:
+    /* Scanlines */
+    repeating-linear-gradient(
+      0deg,
+      transparent 0px, transparent 3px,
+      rgba(0,229,255,.011) 3px, rgba(0,229,255,.011) 4px
+    ),
+    /* Bright stars */
+    radial-gradient(1.5px 1.5px at  7%  9%, rgba(255,255,255,.85) 0%,transparent 100%),
+    radial-gradient(1px   1px at 14% 52%, rgba(255,255,255,.7)  0%,transparent 100%),
+    radial-gradient(1.5px 1.5px at 21% 23%, rgba(255,255,255,.75) 0%,transparent 100%),
+    radial-gradient(1px   1px at 29% 78%, rgba(255,255,255,.6)  0%,transparent 100%),
+    radial-gradient(1.5px 1.5px at 36%  4%, rgba(255,255,255,.8)  0%,transparent 100%),
+    radial-gradient(1px   1px at 44% 67%, rgba(255,255,255,.65) 0%,transparent 100%),
+    radial-gradient(1.5px 1.5px at 51% 38%, rgba(255,255,255,.7)  0%,transparent 100%),
+    radial-gradient(1px   1px at 58% 88%, rgba(255,255,255,.8)  0%,transparent 100%),
+    radial-gradient(1.5px 1.5px at 65% 14%, rgba(255,255,255,.6)  0%,transparent 100%),
+    radial-gradient(1px   1px at 72% 59%, rgba(255,255,255,.75) 0%,transparent 100%),
+    radial-gradient(1.5px 1.5px at 79% 31%, rgba(255,255,255,.85) 0%,transparent 100%),
+    radial-gradient(1px   1px at 86% 73%, rgba(255,255,255,.6)  0%,transparent 100%),
+    radial-gradient(1.5px 1.5px at 93%  5%, rgba(255,255,255,.7)  0%,transparent 100%),
+    radial-gradient(1px   1px at  3% 45%, rgba(255,255,255,.8)  0%,transparent 100%),
+    radial-gradient(1.5px 1.5px at 97% 90%, rgba(255,255,255,.65) 0%,transparent 100%),
+    /* Dim stars */
+    radial-gradient(1px 1px at 10% 30%, rgba(255,255,255,.4) 0%,transparent 100%),
+    radial-gradient(1px 1px at 18% 65%, rgba(255,255,255,.35) 0%,transparent 100%),
+    radial-gradient(1px 1px at 26% 12%, rgba(255,255,255,.45) 0%,transparent 100%),
+    radial-gradient(1px 1px at 34% 55%, rgba(255,255,255,.38) 0%,transparent 100%),
+    radial-gradient(1px 1px at 41% 83%, rgba(255,255,255,.42) 0%,transparent 100%),
+    radial-gradient(1px 1px at 48% 19%, rgba(255,255,255,.35) 0%,transparent 100%),
+    radial-gradient(1px 1px at 55% 47%, rgba(255,255,255,.4)  0%,transparent 100%),
+    radial-gradient(1px 1px at 63% 76%, rgba(255,255,255,.38) 0%,transparent 100%),
+    radial-gradient(1px 1px at 70%  2%, rgba(255,255,255,.45) 0%,transparent 100%),
+    radial-gradient(1px 1px at 77% 41%, rgba(255,255,255,.35) 0%,transparent 100%),
+    radial-gradient(1px 1px at 84% 85%, rgba(255,255,255,.4)  0%,transparent 100%),
+    radial-gradient(1px 1px at 91% 28%, rgba(255,255,255,.42) 0%,transparent 100%),
+    radial-gradient(1px 1px at  5% 93%, rgba(255,255,255,.38) 0%,transparent 100%),
+    radial-gradient(1px 1px at 47% 61%, rgba(255,255,255,.3)  0%,transparent 100%),
+    radial-gradient(1px 1px at 88% 50%, rgba(255,255,255,.35) 0%,transparent 100%),
+    /* Cyan-tinted accent stars */
+    radial-gradient(2px 2px at 33% 40%, rgba(120,230,255,.55) 0%,transparent 100%),
+    radial-gradient(2px 2px at 67% 22%, rgba(120,230,255,.45) 0%,transparent 100%),
+    radial-gradient(2px 2px at 82% 68%, rgba(120,230,255,.5)  0%,transparent 100%),
+    /* Nebula depth */
+    radial-gradient(ellipse 80% 65% at 50% 42%, rgba(0,15,55,.6) 0%, #010209 65%),
+    #010209;
+}
+
+/* ─── Corner bracket decorations ────────────────────── */
+#mainMenuPanel::before,
+#mainMenuPanel::after,
+#levelSelectPanel::before,
+#levelSelectPanel::after {
+  content: '';
+  position: absolute;
+  width: 58px;
+  height: 58px;
+  border-style: solid;
+  border-color: var(--cyan);
+  opacity: 0.28;
+  z-index: 0;
+  pointer-events: none;
+}
+
+#mainMenuPanel::before,
+#levelSelectPanel::before {
+  top: 22px;
+  left: 22px;
+  border-width: 1.5px 0 0 1.5px;
+}
+
+#mainMenuPanel::after,
+#levelSelectPanel::after {
+  bottom: 22px;
+  right: 22px;
+  border-width: 0 1.5px 1.5px 0;
+}
+
+/* ─── Result panel — glass overlay ──────────────────── */
+#resultPanel {
+  background: rgba(1, 3, 20, 0.86);
+  backdrop-filter: blur(3px);
+  gap: 1.8rem;
+}
+
+/* ─────────────────────────────────────────────────────
+   Title
+───────────────────────────────────────────────────── */
+.menu-title {
+  font-family: 'Orbitron', monospace;
+  font-weight: 900;
+  font-size: clamp(2.2rem, 5.5vw, 3.8rem);
+  letter-spacing: 0.5em;
+  text-transform: uppercase;
+  color: var(--cyan);
+  text-shadow: var(--glow-c-md);
+  padding-right: 0.5em;
+  animation: title-breathe 4s ease-in-out infinite;
+  user-select: none;
+}
+
+@keyframes title-breathe {
+  0%, 100% {
+    text-shadow: 0 0 10px var(--cyan), 0 0 28px rgba(0,229,255,.5), 0 0 62px rgba(0,229,255,.2);
+  }
+  50% {
+    text-shadow: 0 0 6px var(--cyan), 0 0 16px rgba(0,229,255,.35);
+  }
+}
+
+#levelSelectPanel .menu-title {
+  font-size: clamp(1.1rem, 2.5vw, 1.6rem);
+  letter-spacing: 0.32em;
+  color: rgba(0,229,255,.7);
+  text-shadow: 0 0 8px rgba(0,229,255,.5);
+  animation: none;
+  padding-right: 0.32em;
+}
+
+/* ─────────────────────────────────────────────────────
+   Shared button base
+───────────────────────────────────────────────────── */
+.menu-button,
+.level-card,
+.result-button {
+  font-family: 'Share Tech Mono', monospace;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--cyan);
+  background: transparent;
+  border: 1px solid rgba(0,229,255,.35);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: color .2s, border-color .2s, box-shadow .25s;
+}
+
+/* Sweep shimmer on hover */
+.menu-button::after,
+.result-button::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg,
+    transparent 30%, rgba(0,229,255,.14) 50%, transparent 70%);
+  transform: translateX(-120%);
+  transition: transform .45s ease;
+  pointer-events: none;
+}
+
+.menu-button:hover::after,
+.result-button:hover::after {
+  transform: translateX(120%);
+}
+
+.menu-button:hover,
+.result-button:hover {
+  color: #fff;
+  border-color: var(--cyan);
+  box-shadow: var(--glow-c-sm), inset 0 0 20px rgba(0,229,255,.04);
+}
+
+.menu-button:active,
+.result-button:active {
+  box-shadow: var(--glow-c-md);
+}
+
+/* ─── Menu button ────────────────────────────────────── */
+.menu-button {
+  padding: .8rem 3.2rem;
+  font-size: .85rem;
+  letter-spacing: .3em;
+}
+
+/* ─────────────────────────────────────────────────────
+   Level grid
+───────────────────────────────────────────────────── */
 .level-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  gap: .8rem;
   justify-content: center;
-  max-width: 800px;
+  max-width: 760px;
+  padding: .5rem 1rem;
+}
+
+.level-card {
+  padding: .85rem 1.8rem;
+  min-width: 158px;
+  text-align: center;
+  font-size: .75rem;
+  letter-spacing: .18em;
+  border: 1px solid rgba(0,229,255,.22);
+  color: rgba(0,229,255,.65);
+  transition: all .22s;
+}
+
+.level-card:hover {
+  color: #fff;
+  border-color: rgba(0,229,255,.75);
+  box-shadow: var(--glow-c-sm), inset 0 0 18px rgba(0,229,255,.05);
+}
+
+.level-card.is-completed {
+  border-color: rgba(0,255,136,.45);
+  color: rgba(0,255,136,.8);
+}
+
+.level-card.is-completed::after {
+  content: ' ✓';
+  font-size: .7rem;
+}
+
+.level-card.is-completed:hover {
+  border-color: var(--green);
+  color: #fff;
+  box-shadow: var(--glow-g-sm), inset 0 0 18px rgba(0,255,136,.05);
+}
+
+/* ─────────────────────────────────────────────────────
+   Result overlay
+───────────────────────────────────────────────────── */
+.result-message {
+  font-family: 'Orbitron', monospace;
+  font-weight: 700;
+  font-size: clamp(1.4rem, 3.5vw, 2.1rem);
+  letter-spacing: .25em;
+  text-transform: uppercase;
+  color: var(--green);
+  text-shadow: var(--glow-g-sm);
+  animation: result-in .45s cubic-bezier(.22,1,.36,1) both;
+}
+
+.result-message.is-failure {
+  color: var(--red);
+  text-shadow: var(--glow-r-sm);
+}
+
+@keyframes result-in {
+  from { opacity: 0; transform: scale(.88) translateY(-16px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 .result-buttons {
@@ -48,80 +310,8 @@ html, body {
   gap: 1rem;
 }
 
-/* ─── base type ──────────────────────────────────────── */
-
-.menu-title {
-  font-family: 'Courier New', monospace;
-  font-size: 3rem;
-  font-weight: 700;
-  letter-spacing: 0.35em;
-  text-transform: uppercase;
-  color: #fff;
-}
-
-/* ─── buttons (shared base) ─────────────────────────── */
-
-.menu-button,
-.level-card,
 .result-button {
-  font-family: 'Courier New', monospace;
-  font-size: 0.85rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #fff;
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  padding: .65rem 2.2rem;
+  font-size: .8rem;
+  letter-spacing: .25em;
 }
-
-.menu-button:hover,
-.level-card:hover,
-.result-button:hover {
-  background: rgba(255, 255, 255, 0.07);
-  border-color: rgba(255, 255, 255, 0.75);
-}
-
-.menu-button:active,
-.level-card:active,
-.result-button:active {
-  background: rgba(255, 255, 255, 0.14);
-}
-
-/* ─── individual sizes ───────────────────────────────── */
-
-.menu-button {
-  padding: 0.7rem 2.8rem;
-  font-size: 0.9rem;
-}
-
-.level-card {
-  padding: 0.9rem 1.4rem;
-  min-width: 150px;
-  text-align: center;
-}
-
-.level-card.is-completed {
-  border-color: rgba(0, 255, 136, 0.45);
-  color: rgba(0, 255, 136, 0.9);
-}
-
-.level-card.is-completed:hover {
-  border-color: rgba(0, 255, 136, 0.85);
-  background: rgba(0, 255, 136, 0.05);
-}
-
-.result-message {
-  font-family: 'Courier New', monospace;
-  font-size: 2rem;
-  font-weight: 700;
-  letter-spacing: 0.25em;
-  text-transform: uppercase;
-  color: #fff;
-}
-
-.result-button {
-  padding: 0.6rem 2rem;
-}
-
-/* ─── your neon overrides go below this line ─────────── */
