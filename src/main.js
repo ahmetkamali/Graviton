@@ -38,6 +38,7 @@ let shipDragging = false;
 let drag = { active: false, kind: null, obj: null };
 let fixedStars = [];
 let lastTime = 0;
+let explosion = null;
 
 function setState(next) {
   gameState = next;
@@ -126,6 +127,78 @@ function launch() {
 
 function resetLevel() {
   loadLevel(currentLevel.id);
+}
+
+function triggerExplosion(x, y) {
+  const ex = Math.max(8, Math.min(canvas.width  - 8, x));
+  const ey = Math.max(8, Math.min(canvas.height - 8, y));
+  explosion = {
+    x: ex, y: ey, elapsed: 0, flash: 1,
+    particles: Array.from({ length: 24 }, () => {
+      const a = Math.random() * Math.PI * 2;
+      const s = 50 + Math.random() * 160;
+      return { x: ex, y: ey, vx: Math.cos(a) * s, vy: Math.sin(a) * s,
+               r: 2 + Math.random() * 4, life: 1, decay: 0.6 + Math.random() * 0.7 };
+    }),
+  };
+  gameState = 'EXPLODING';
+}
+
+function softReset() {
+  explosion = null;
+  const playerPlanets = planets.filter(p => !p.isPredefined);
+  starsLeft   = currentLevel.starsAvailable - placedStars.length;
+  planetsLeft = (currentLevel.planetsAvailable ?? 0) - playerPlanets.length;
+  aimAngle    = 0;
+  shipDragging = false;
+  drag = { active: false, kind: null, obj: null };
+  ship = new Ship({ x: currentLevel.ship.x, y: currentLevel.ship.y });
+  gameState = 'PLACEMENT';
+}
+
+function updateExplosion(dt) {
+  explosion.elapsed += dt;
+  explosion.flash = Math.max(0, 1 - explosion.elapsed * 5);
+  for (const p of explosion.particles) {
+    p.x  += p.vx * dt;
+    p.y  += p.vy * dt;
+    p.vy += 40 * dt;
+    p.life -= p.decay * dt;
+  }
+  explosion.particles = explosion.particles.filter(p => p.life > 0);
+  if (explosion.elapsed >= 1) softReset();
+}
+
+function renderExplosion() {
+  const w = canvas.width;
+  const h = canvas.height;
+  clear(ctx, w, h);
+  drawBackground(ctx, w, h);
+  drawEndZone(ctx, currentLevel.endZone);
+  for (const zone of speedZones) zone.draw(ctx);
+  for (const star of fixedStars) star.draw(ctx);
+  for (const planet of planets) planet.draw(ctx);
+  for (const star of placedStars) star.draw(ctx);
+
+  if (explosion.flash > 0) {
+    ctx.beginPath();
+    ctx.arc(explosion.x, explosion.y, (1 - explosion.flash) * 55 + 6, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(255,255,255,${explosion.flash * 0.4})`;
+    ctx.fill();
+  }
+
+  ctx.save();
+  ctx.shadowBlur = 8;
+  for (const p of explosion.particles) {
+    const a = Math.max(0, p.life);
+    const g = Math.floor(160 * p.life);
+    ctx.shadowColor = `rgba(255,${g},50,${a})`;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, Math.max(0.5, p.r * a), 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(255,${g},50,${a})`;
+    ctx.fill();
+  }
+  ctx.restore();
 }
 
 function clampAngle(angle, [minDeg, maxDeg]) {
@@ -290,7 +363,7 @@ function updateSimulation(dt) {
   ship.recordTrail();
 
   if (checkCollision(ship, allSources)) {
-    setState('LEVEL_FAILED');
+    triggerExplosion(ship.x, ship.y);
     return;
   }
 
@@ -301,12 +374,12 @@ function updateSimulation(dt) {
   }
 
   if (isOutOfBounds(ship, canvas.width, canvas.height)) {
-    setState('LEVEL_FAILED');
+    triggerExplosion(ship.x, ship.y);
     return;
   }
 
   if (failsSpeedZone(ship, speedZones)) {
-    setState('LEVEL_FAILED');
+    triggerExplosion(ship.x, ship.y);
   }
 }
 
@@ -339,6 +412,9 @@ function tick(timestamp) {
   } else if (gameState === 'SIMULATION') {
     updateSimulation(dt);
     renderSimulation();
+  } else if (gameState === 'EXPLODING') {
+    updateExplosion(dt);
+    renderExplosion();
   }
 
   requestAnimationFrame(tick);
