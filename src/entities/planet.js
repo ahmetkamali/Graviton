@@ -61,21 +61,13 @@ export class Planet {
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // Planet body
-    const g = ctx.createRadialGradient(
-      this.x - this.radius * 0.3, this.y - this.radius * 0.3, 0,
-      this.x, this.y, this.radius
-    );
-    g.addColorStop(0,   '#bbddff');
-    g.addColorStop(0.5, '#5599ff');
-    g.addColorStop(1,   '#1a3aaa');
-
+    // Planet body — flat color with glow
     ctx.save();
     ctx.shadowColor = '#5599ff';
     ctx.shadowBlur  = 10;
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-    ctx.fillStyle = g;
+    ctx.fillStyle = '#5599ff';
     ctx.fill();
     ctx.restore();
   }

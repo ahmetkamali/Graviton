@@ -13,18 +13,27 @@ export class SpeedZone {
   }
 
   draw(ctx) {
-    ctx.fillStyle = 'rgba(255, 130, 0, 0.06)';
+    const cx = this.x + this.width / 2;
+
+    ctx.fillStyle = 'rgba(255, 130, 0, 0.07)';
     ctx.fillRect(this.x, this.y, this.width, this.height);
 
-    ctx.strokeStyle = 'rgba(255, 150, 0, 0.5)';
+    ctx.strokeStyle = 'rgba(255, 150, 0, 0.55)';
     ctx.lineWidth = 1.5;
     ctx.setLineDash([6, 5]);
     ctx.strokeRect(this.x, this.y, this.width, this.height);
     ctx.setLineDash([]);
 
-    ctx.fillStyle = 'rgba(255, 165, 0, 0.8)';
-    ctx.font = '11px "Share Tech Mono", monospace';
     ctx.textAlign = 'center';
-    ctx.fillText(`MIN ${this.minSpeed}`, this.x + this.width / 2, this.y - 7);
+
+    // "SPEED ZONE" label
+    ctx.font = '10px "Share Tech Mono", monospace';
+    ctx.fillStyle = 'rgba(255, 150, 0, 0.65)';
+    ctx.fillText('SPEED ZONE', cx, this.y - 20);
+
+    // Minimum speed requirement
+    ctx.font = 'bold 12px "Share Tech Mono", monospace';
+    ctx.fillStyle = 'rgba(255, 175, 0, 0.95)';
+    ctx.fillText(`MIN  ${this.minSpeed}`, cx, this.y - 7);
   }
 }

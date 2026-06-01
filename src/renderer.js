@@ -39,8 +39,8 @@ export function drawEndZone(ctx, endZone) {
   ctx.strokeRect(x, y, width, height);
   ctx.restore();
 
-  ctx.fillStyle = 'rgba(0, 255, 136, 0.75)';
-  ctx.font = '11px "Share Tech Mono", monospace';
+  ctx.fillStyle = 'rgba(0, 255, 136, 0.95)';
+  ctx.font = 'bold 11px "Share Tech Mono", monospace';
   ctx.textAlign = 'center';
   ctx.fillText('GOAL', x + width / 2, y - 7);
 }

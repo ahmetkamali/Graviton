@@ -5,7 +5,7 @@ export function getLaunchBtn(canvasWidth) {
 export function drawPlacementHUD(ctx, canvasWidth) {
   ctx.font = '11px "Share Tech Mono", monospace';
   ctx.textAlign = 'left';
-  ctx.fillStyle = 'rgba(0, 229, 255, 0.3)';
+  ctx.fillStyle = 'rgba(0, 229, 255, 0.7)';
   ctx.fillText('AIM  ·  PLACE  ·  LAUNCH', 14, 28);
 
   const { x, y, w, h } = getLaunchBtn(canvasWidth);

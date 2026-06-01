@@ -254,8 +254,8 @@ html, body {
   text-align: center;
   font-size: .75rem;
   letter-spacing: .18em;
-  border: 1px solid rgba(0,229,255,.22);
-  color: rgba(0,229,255,.65);
+  border: 1px solid rgba(0,229,255,.3);
+  color: rgba(0,229,255,.85);
   transition: all .22s;
 }
 
