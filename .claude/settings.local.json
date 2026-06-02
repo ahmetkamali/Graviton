@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "PowerShell(New-Item *)",
-      "Bash(git *)",
-      "Bash(npm run *)"
-    ]
-  }
-}
